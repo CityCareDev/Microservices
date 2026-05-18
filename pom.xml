@@ -18,14 +18,7 @@
     <url/>
     <modules>
         <module>ServiceRegistry</module>
-        <module>ConfigServer</module>
-        <module>FacilityService</module>
-        <module>ApiGateway</module>
-        <module>CitizenService</module>
-        <module>EmergencyService</module>
-        <module>PatientTreatmentService</module>
-        <module>ComplianceService</module>
-        <module>AuthService</module>
+
     </modules>
 
     <properties>
