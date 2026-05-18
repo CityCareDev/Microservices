@@ -18,7 +18,7 @@
     <url/>
     <modules>
         <module>ServiceRegistry</module>
-
+        <module>ConfigServer</module>
     </modules>
 
     <properties>
