@@ -1,0 +1,23 @@
+# Global shared configuration for all services
+# This file contains common settings shared across all microservices
+
+spring:
+  datasource:
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:root}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"
+        exclude: "env,beans,threaddump,heapdump,configprops,env-toml,logfile"
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    org.springframework.web: INFO
+    org.springframework.boot: INFO
+
