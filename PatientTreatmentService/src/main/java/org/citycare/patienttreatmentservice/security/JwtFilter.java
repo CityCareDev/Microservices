@@ -35,7 +35,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
                 // check if token is valid
                 if (!jwtProvider.isTokenExpired(claims)) {
-
                     String role = claims.get("role", String.class);
 
                     // SAFE EXTRACTION: userId Number ayina, String ayina handle chestundi
