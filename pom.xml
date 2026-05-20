@@ -19,8 +19,11 @@
 
     <modules>
         <module>ServiceRegistry</module>
+        <module>AuthService</module>
         <module>ConfigServer</module>
         <module>ApiGateway</module>
+        <module>EmergencyService</module>
+        <module>PatientTreatmentService</module>
     </modules>
 
     <properties>
