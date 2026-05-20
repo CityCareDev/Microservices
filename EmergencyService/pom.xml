@@ -8,7 +8,7 @@
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath><!-- lookup parent from repository -->
     </parent>
-<!--    <groupId>org.citycare</groupId>-->
+    <groupId>org.citycare</groupId>
     <artifactId>EmergencyService</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>EmergencyService</name>

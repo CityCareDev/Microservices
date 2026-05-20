@@ -10,12 +10,13 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.citycare</groupId>
+    <groupId>org.citycare</groupId>
     <artifactId>citycare</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <name>Microservices</name>
-    <description>CityCare Microservices</description>
-    <url/>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>citycare System</name>
+    <description>Project for citycare sevices</description>
+
     <modules>
         <module>ServiceRegistry</module>
         <module>ConfigServer</module>
