@@ -24,6 +24,8 @@
         <module>ApiGateway</module>
         <module>EmergencyService</module>
         <module>PatientTreatmentService</module>
+        <module>ComplianceService</module>
+
     </modules>
 
     <properties>
