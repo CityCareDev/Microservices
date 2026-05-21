@@ -24,7 +24,6 @@ public class Staff extends BaseEntity {
     }
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long staffId;
 
     @JsonIgnore
@@ -47,7 +46,5 @@ public class Staff extends BaseEntity {
     @Builder.Default
     private Status status = Status.ACTIVE;
 
-    // Link to User account
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+
 }
