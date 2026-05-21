@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: PATIENTTREATMENTSERVICE
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: patienttreatmentservice
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-interval: 2000
+        max-attempts: 6
+        multiplier: 1.1
+
