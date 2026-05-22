@@ -13,6 +13,8 @@ import org.citycare.facilityservice.services.FacilityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,11 +64,8 @@ public class FacilityServiceImpl implements FacilityService {
     }
 
     @Override
-    public List<FacilityResponse> getAll() {
-        // CHANGE: Convert List<Entity> to List<DTO> using Streams
-        return facilityRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<FacilityResponse> getAll(Pageable pageable) {
+        return facilityRepository.findAll(pageable).map(this::mapToResponse);
     }
 
     @Override

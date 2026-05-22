@@ -17,6 +17,8 @@ import org.citycare.facilityservice.services.StaffService;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -158,10 +160,8 @@ public class StaffServiceImpl implements StaffService {
     }
 
     @Override
-    public List<StaffResponse> getAllStaff() {
-        return staffRepository.findAll().stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<StaffResponse> getAllStaff(Pageable pageable) {
+        return staffRepository.findAll(pageable).map(this::mapToResponse);
     }
 
     @Override
