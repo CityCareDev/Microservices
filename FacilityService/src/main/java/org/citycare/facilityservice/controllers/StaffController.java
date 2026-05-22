@@ -3,21 +3,21 @@ package org.citycare.facilityservice.controllers;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.citycare.facilityservice.dto.request.StaffRequest;
-import org.citycare.facilityservice.dto.response.StaffResponse;
 import org.citycare.facilityservice.dto.response.ApiResponse;
+import org.citycare.facilityservice.dto.response.StaffResponse;
 import org.citycare.facilityservice.entities.Staff;
+import org.citycare.facilityservice.exceptions.ResourceNotFoundException;
 import org.citycare.facilityservice.services.StaffService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
-import org.citycare.facilityservice.exceptions.ResourceNotFoundException;
+
 import java.util.List;
 // --- Exception Handling for Validation and Not Found ---
 @RestControllerAdvice
@@ -73,9 +73,10 @@ public class StaffController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<StaffResponse>>> getAll() {
-        List<StaffResponse> data = staffService.getAllStaff();
-        return ResponseEntity.ok(ApiResponse.ok("All staff members retrieved", data));
+    public ResponseEntity<ApiResponse<Page<StaffResponse>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.ok("All staff members retrieved", staffService.getAllStaff(PageRequest.of(page, size))));
     }
 
     @GetMapping("/facility/{facilityId}")

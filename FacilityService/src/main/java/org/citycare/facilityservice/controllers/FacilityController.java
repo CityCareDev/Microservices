@@ -8,6 +8,8 @@ import org.citycare.facilityservice.entities.Facility;
 import org.citycare.facilityservice.services.FacilityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,9 +33,10 @@ public class FacilityController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'DOCTOR', 'DISPATCHER', 'COMPLIANCE_OFFICER')")
-    public ResponseEntity<ApiResponse<List<FacilityResponse>>> getAll() {
-        List<FacilityResponse> data = facilityService.getAll();
-        return ResponseEntity.ok(ApiResponse.ok("All facilities retrieved", data));
+    public ResponseEntity<ApiResponse<Page<FacilityResponse>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.ok("All facilities retrieved", facilityService.getAll(PageRequest.of(page, size))));
     }
 
     @GetMapping("/{id}")

@@ -10,6 +10,8 @@ import org.citycare.citizenservice.dto.response.CitizenResponse;
 import org.citycare.citizenservice.entity.Citizen;
 import org.citycare.citizenservice.entity.CitizenDocument;
 import org.citycare.citizenservice.service.CitizenService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -53,8 +55,10 @@ public class CitizenController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<Citizen>>> getAll() {
-        return ResponseEntity.ok(ApiResponse.ok("All citizens (ADMIN ONLY)", citizenService.getAll()));
+    public ResponseEntity<ApiResponse<Page<Citizen>>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.ok("All citizens (ADMIN ONLY)", citizenService.getAll(PageRequest.of(page, size))));
     }
 
     @GetMapping("/{id}")
