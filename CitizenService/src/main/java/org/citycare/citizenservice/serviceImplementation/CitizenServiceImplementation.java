@@ -9,9 +9,13 @@ import org.citycare.citizenservice.entity.CitizenDocument;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.citycare.citizenservice.exception.ResourceNotFoundException;
+import org.citycare.citizenservice.feign.AuthClient;
 import org.citycare.citizenservice.repository.CitizenDocumentRepository;
 import org.citycare.citizenservice.repository.CitizenRepository;
 import org.citycare.citizenservice.service.CitizenService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,6 +23,7 @@ import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -154,8 +159,8 @@ public class CitizenServiceImplementation implements CitizenService {
         // citizenId == userId in this system
         return getCitizenResponseById(userId);
     }
-    public List<Citizen> getAll() {
-        return citizenRepository.findAll();
+    public Page<Citizen> getAll(Pageable pageable) {
+        return citizenRepository.findAll(pageable);
     }
 
     @Transactional
