@@ -7,6 +7,8 @@ import org.citycare.emergencyservice.dto.response.EmergencyResponse;
 import org.citycare.emergencyservice.entity.Ambulance;
 import org.citycare.emergencyservice.entity.Emergency;
 import org.citycare.emergencyservice.feign.dto.CitizenResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -14,7 +16,7 @@ public interface EmergencyService {
     // Emergency Reporting & Tracking
     Emergency reportEmergency(EmergencyRequest req);
     Emergency getById(Long id);
-    List<Emergency> getAllEmergencies();
+    Page<Emergency> getAllEmergencies(Pageable pageable);
     List<Emergency> getMyCases(Long citizenId);
     List<Emergency> getReportedEmergencies();
     List<Emergency> getDispatchedEmergencies();
