@@ -25,7 +25,8 @@
         <module>EmergencyService</module>
         <module>PatientTreatmentService</module>
         <module>ComplianceService</module>
-
+        <module>CitizenService</module>
+        <module>FacilityService</module>
     </modules>
 
     <properties>
