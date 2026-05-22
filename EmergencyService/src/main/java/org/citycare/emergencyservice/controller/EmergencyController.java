@@ -10,6 +10,8 @@ import org.citycare.emergencyservice.entity.Emergency;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.citycare.emergencyservice.services.EmergencyService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,8 +41,10 @@ public class EmergencyController {
     }
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'COMPLIANCE_OFFICER')")
-    public ResponseEntity<ApiResponse<List<Emergency>>> getAllEmergencies() {
-        return ResponseEntity.ok(ApiResponse.ok("All emergencies", emergencyService.getAllEmergencies()));
+    public ResponseEntity<ApiResponse<Page<Emergency>>> getAllEmergencies(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(ApiResponse.ok("All emergencies", emergencyService.getAllEmergencies(PageRequest.of(page, size))));
     }
 
     @GetMapping("/my")
