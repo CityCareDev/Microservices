@@ -34,16 +34,8 @@ public class CitizenServiceImplementation implements CitizenService {
     private final CitizenDocumentRepository documentRepository;
     private final AuthClient authClient;
 
-    // ── Called by auth-service via OpenFeign on citizen registration ──────────
-
-    /**
-     * Auto-creates a minimal citizen profile when a new user registers.
-     * Called internally by auth-service via OpenFeign — not by the user directly.
-     * If a profile already exists for this userId (e.g. idempotency), it is returned as-is.
-     */
     @Transactional
     public Citizen createCitizenFromRegistration(Long userId, String name, String contactInfo) {
-        // Idempotent: if profile already exists, return it
         return citizenRepository.findById(userId).orElseGet(() -> {
             log.info("Auto-creating citizen profile for userId={}, name={}", userId, name);
             Citizen citizen = Citizen.builder()
@@ -56,107 +48,65 @@ public class CitizenServiceImplementation implements CitizenService {
         });
     }
 
-    // ── Standard CRUD ─────────────────────────────────────────────────────────
-
     @Transactional
     public Citizen createOrUpdateProfile(Long userId, CitizenProfileRequest req) {
-
         log.info("Updating profile for userId={}, request={}", userId, req);
-
-        Citizen citizen = citizenRepository.findById(userId)
-                .orElse(new Citizen());
-
+        Citizen citizen = citizenRepository.findById(userId).orElse(new Citizen());
         citizen.setCitizenId(userId);
 
-        // Required fields: explicit null/blank is not allowed
         if (req.hasField("name")) {
             if (req.getName() == null || req.getName().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name cannot be empty");
             }
             citizen.setName(req.getName().trim());
         }
-
         if (req.hasField("contactInfo")) {
             if (req.getContactInfo() == null || req.getContactInfo().isBlank()) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Contact info cannot be empty");
             }
             citizen.setContactInfo(req.getContactInfo().trim());
         }
-
-        // Optional fields: explicit null/blank clears value, omitted means no change
-        if (req.hasField("dateOfBirth")) {
-            citizen.setDateOfBirth(req.getDateOfBirth());
-        }
-
-        if (req.hasField("gender")) {
-            citizen.setGender(req.getGender());
-        }
-
-        if (req.hasField("address")) {
-            if (req.getAddress() == null || req.getAddress().isBlank()) {
-                citizen.setAddress(null);
-            } else {
-                citizen.setAddress(req.getAddress().trim());
-            }
-        }
+        if (req.hasField("dateOfBirth")) citizen.setDateOfBirth(req.getDateOfBirth());
+        if (req.hasField("gender")) citizen.setGender(req.getGender());
+        if (req.hasField("address")) citizen.setAddress(req.getAddress() == null || req.getAddress().isBlank() ? null : req.getAddress().trim());
 
         if (citizen.getName() == null || citizen.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Name is required");
         }
-
         citizen.setStatus(Citizen.Status.ACTIVE);
-
-        // Save citizen first
         Citizen saved = citizenRepository.save(citizen);
-        log.info("Citizen saved successfully: {}", saved.getCitizenId());
 
-        // Try to update auth service, but don't fail if it errors
         try {
             if (req.hasField("name") || req.hasField("contactInfo")) {
-                authClient.updateUserProfile(
-                        userId,
-                        new UserProfileUpdateRequest(
-                                saved.getName(),
-                                saved.getContactInfo()
-                        )
-                );
-                log.info("Auth service profile updated successfully");
+                authClient.updateUserProfile(userId, new UserProfileUpdateRequest(saved.getName(), saved.getContactInfo()));
             }
         } catch (Exception e) {
-            log.warn("Failed to update auth service profile, but citizen profile saved: {}", e.getMessage());
+            log.warn("Failed to update auth service profile: {}", e.getMessage());
         }
-
         return saved;
     }
 
     public Citizen getProfile(Long userId) {
-        return citizenRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Citizen profile not found. Please complete your profile.", userId));
+        return citizenRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("Citizen profile not found", userId));
     }
 
     public Citizen getById(Long citizenId) {
-        return citizenRepository.findById(citizenId)
-                .orElseThrow(() -> new ResourceNotFoundException("Citizen", citizenId));
+        return citizenRepository.findById(citizenId).orElseThrow(() -> new ResourceNotFoundException("Citizen", citizenId));
     }
-
 
     @Override
     public CitizenResponse getCitizenResponseById(Long citizenId) {
-
-        Citizen citizen = citizenRepository.getById(citizenId);
-
+        Citizen citizen = getById(citizenId);
         return CitizenResponse.builder()
                 .citizenId(citizen.getCitizenId())
                 .name(citizen.getName())
                 .contactInfo(citizen.getContactInfo())
                 .status("ACTIVE")
                 .build();
-
     }
 
     @Override
     public CitizenResponse getCitizenResponseByUserId(Long userId) {
-        // citizenId == userId in this system
         return getCitizenResponseById(userId);
     }
     public Page<Citizen> getAll(Pageable pageable) {
@@ -165,9 +115,7 @@ public class CitizenServiceImplementation implements CitizenService {
 
     @Transactional
     public CitizenDocument uploadDocument(Long citizenId, byte[] documentData, String contentType) {
-        Citizen citizen = citizenRepository.findById(citizenId)
-                .orElseThrow(() -> new ResourceNotFoundException("Citizen", citizenId));
-
+        Citizen citizen = getById(citizenId);
         CitizenDocument doc = CitizenDocument.builder()
                 .citizen(citizen)
                 .documentData(documentData)
@@ -175,39 +123,27 @@ public class CitizenServiceImplementation implements CitizenService {
                 .uploadedDate(LocalDate.now())
                 .verificationStatus(CitizenDocument.VerificationStatus.PENDING)
                 .build();
-
-        CitizenDocument saved = documentRepository.save(doc);
-
-        return saved;
+        return documentRepository.save(doc);
     }
 
     public CitizenDocument getDocumentWithBlob(Long documentId) {
-        return documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
+        return documentRepository.findById(documentId).orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
     }
 
     @Transactional
-    public CitizenDocumentResponse verifyDocument(Long documentId,
-                                                  CitizenDocument.VerificationStatus status) {
-
-        CitizenDocument doc = documentRepository.findById(documentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
-
+    public CitizenDocumentResponse verifyDocument(Long documentId, CitizenDocument.VerificationStatus status) {
+        CitizenDocument doc = documentRepository.findById(documentId).orElseThrow(() -> new ResourceNotFoundException("Document", documentId));
         doc.setVerificationStatus(status);
-
+        CitizenDocument saved = documentRepository.save(doc);
         return CitizenDocumentResponse.builder()
-                .documentId(doc.getDocumentId())
-                .verificationStatus(doc.getVerificationStatus().name())
-                .uploadedDate(doc.getUploadedDate())
+                .documentId(saved.getDocumentId())
+                .verificationStatus(saved.getVerificationStatus().name())
+                .uploadedDate(saved.getUploadedDate())
                 .build();
     }
 
     public List<CitizenDocumentResponse> getDocuments(Long citizenId) {
-
-        List<CitizenDocument> documents =
-                documentRepository.findByCitizenCitizenId(citizenId);
-
-        return documents.stream()
+        return documentRepository.findByCitizenCitizenId(citizenId).stream()
                 .map(doc -> CitizenDocumentResponse.builder()
                         .documentId(doc.getDocumentId())
                         .verificationStatus(doc.getVerificationStatus().name())
@@ -217,8 +153,11 @@ public class CitizenServiceImplementation implements CitizenService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isCitizenDocumentVerified(Long citizenId) {
-        return documentRepository.existsByCitizenCitizenIdAndVerificationStatus(
-                citizenId, CitizenDocument.VerificationStatus.VERIFIED);
+        List<CitizenDocument> docs = documentRepository.findByCitizenCitizenId(citizenId);
+        boolean isVerified = docs.stream().anyMatch(d -> d.getVerificationStatus() == CitizenDocument.VerificationStatus.VERIFIED);
+        log.info("Checking verification for citizen {}: found {} documents, verified={}", citizenId, docs.size(), isVerified);
+        return isVerified;
     }
 }
