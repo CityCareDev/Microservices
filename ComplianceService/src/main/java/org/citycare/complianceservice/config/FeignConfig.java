@@ -1,4 +1,4 @@
-package org.citycare.complianceservice.feign;
+package org.citycare.complianceservice.config;
 
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
