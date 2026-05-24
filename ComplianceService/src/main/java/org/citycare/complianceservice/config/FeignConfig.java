@@ -7,10 +7,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-/**
- * Feign configuration: forwards the Authorization header from the incoming
- * request to downstream service calls, so JWT is propagated across services.
- */
 @Configuration
 public class FeignConfig {
 
