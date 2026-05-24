@@ -11,8 +11,6 @@ import org.citycare.emergencyservice.entity.Ambulance;
 import org.citycare.emergencyservice.entity.Emergency;
 import org.citycare.emergencyservice.exception.BadRequestException;
 import org.citycare.emergencyservice.exception.ResourceNotFoundException;
-//import org.citycare.emergencyservice.feign.CitizenClient;
-//import org.citycare.emergencyservice.feign.dto.CitizenResponse;
 import org.citycare.emergencyservice.feign.CitizenClient;
 import org.citycare.emergencyservice.feign.StaffClient;
 import org.citycare.emergencyservice.feign.dto.CitizenResponse;
@@ -47,41 +45,35 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Override
     @Transactional
     public Emergency reportEmergency(EmergencyRequest req) {
-        // 1. Security Context nundi User ID (Citizen ID) extract cheyadam
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated to report emergency");
+            throw new RuntimeException(\"User not authenticated to report emergency\");
         }
 
-        // JwtFilter lo userId ni principal ga pettam kabatti ikkada direct ga parse cheyochu
-        // In this system citizenId == userId (citizen profile PK is set to userId on registration)
         Long citizenId = Long.parseLong(auth.getName());
-        log.info("Reporting emergency for Citizen ID: {}", citizenId);
+        log.info(\"Reporting emergency for Citizen ID: {}\", citizenId);
 
-        // 2. Validate Citizen exists
         CitizenResponse citizen;
         try {
             citizen = citizenClient.getById(citizenId);
-            log.info("Validated citizen: {} (id={})", citizen.getName(), citizen.getCitizenId());
+            log.info(\"Validated citizen: {} (id={})\", citizen.getName(), citizen.getCitizenId());
         } catch (Exception e) {
-            log.warn("Citizen validation failed for ID {}: {}", citizenId, e.getMessage());
-            throw new BadRequestException("Citizen profile not found. Cannot report emergency.");
+            log.warn(\"Citizen validation failed for ID {}: {}\", citizenId, e.getMessage());
+            throw new BadRequestException(\"Citizen profile not found. Cannot report emergency.\");
         }
 
-        // 3. Verify citizen has at least one verified document (server-side enforcement)
         try {
             boolean verified = citizenClient.isCitizenVerified(citizenId);
             if (!verified) {
-                throw new BadRequestException("Document verification required before reporting emergencies. Please upload and get your documents verified.");
+                throw new BadRequestException(\"Document verification required before reporting emergencies. Please upload and get your documents verified.\");
             }
         } catch (BadRequestException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("Document verification check failed for citizen {}: {}", citizenId, e.getMessage());
-            throw new BadRequestException("Unable to verify document status. Please try again later.");
+            log.warn(\"Document verification check failed for citizen {}: {}\", citizenId, e.getMessage());
+            throw new BadRequestException(\"Unable to verify document status. Please try again later.\");
         }
 
-        // 3. Create Emergency with the extracted citizenId
         Emergency emergency = Emergency.builder()
                 .citizenId(citizenId)
                 .type(req.getType())
@@ -97,22 +89,22 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Transactional
     public Emergency dispatchAmbulance(Long emergencyId, Long dispatcherId, DispatchRequest req) {
         Emergency emergency = emergencyRepository.findById(emergencyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Emergency", emergencyId));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Emergency\", emergencyId));
 
         if (emergency.getStatus() != Emergency.Status.REPORTED) {
-            throw new BadRequestException("Cannot dispatch – status is " + emergency.getStatus());
+            throw new BadRequestException(\"Cannot dispatch - status is \" + emergency.getStatus());
         }
 
         Ambulance ambulance = ambulanceRepository.findById(req.getAmbulanceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Ambulance", req.getAmbulanceId()));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Ambulance\", req.getAmbulanceId()));
 
         Long dispatcherFacilityId = resolveDispatcherFacilityId(dispatcherId);
         if (!dispatcherFacilityId.equals(ambulance.getFacilityId())) {
-            throw new BadRequestException("Dispatcher can only dispatch ambulances from their assigned facility");
+            throw new BadRequestException(\"Dispatcher can only dispatch ambulances from their assigned facility\");
         }
 
         if (ambulance.getStatus() != Ambulance.Status.AVAILABLE) {
-            throw new BadRequestException("Ambulance " + ambulance.getVehicleNumber() + " is not available");
+            throw new BadRequestException(\"Ambulance \" + ambulance.getVehicleNumber() + \" is not available\");
         }
 
         ambulance.setStatus(Ambulance.Status.DISPATCHED);
@@ -155,7 +147,7 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Override
     public Emergency getById(Long id) {
         return emergencyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Emergency", id));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Emergency\", id));
     }
 
     @Override
@@ -172,18 +164,12 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Transactional
     public Emergency updateEmergencyStatus(Long emergencyId, String statusStr) {
         Emergency emergency = emergencyRepository.findById(emergencyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Emergency", emergencyId));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Emergency\", emergencyId));
         Emergency.Status status = Emergency.Status.valueOf(statusStr.toUpperCase());
         emergency.setStatus(status);
-        log.info("Emergency {} status updated to {} (called via OpenFeign)", emergencyId, status);
+        log.info(\"Emergency {} status updated to {} (called via OpenFeign)\", emergencyId, status);
         return emergencyRepository.save(emergency);
     }
-
-//    @Override
-//    public CitizenResponse getCitizenForEmergency(Long emergencyId) {
-//        Emergency emergency = getById(emergencyId);
-//        return citizenClient.getCitizenById(emergency.getCitizenId());
-//    }
 
     @Override
     @Transactional
@@ -211,7 +197,7 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Transactional
     public Ambulance updateAmbulanceStatus(Long id, Ambulance.Status status) {
         Ambulance amb = ambulanceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ambulance", id));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Ambulance\", id));
         amb.setStatus(status);
         return ambulanceRepository.save(amb);
     }
@@ -220,19 +206,17 @@ public class EmergencyServiceImpl implements EmergencyService{
     @Transactional
     public void deleteAmbulance(Long id) {
         Ambulance amb = ambulanceRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Ambulance", id));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Ambulance\", id));
         if (amb.getStatus() == Ambulance.Status.DISPATCHED) {
-            throw new IllegalStateException("Cannot delete an ambulance that is currently dispatched");
+            throw new IllegalStateException(\"Cannot delete an ambulance that is currently dispatched\");
         }
         ambulanceRepository.delete(amb);
     }
 
-
-
     @Override
     public EmergencyResponse getEmergencyResponseById(Long id) {
         Emergency e = emergencyRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Emergency", id));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Emergency\", id));
 
         return EmergencyResponse.builder()
                 .emergencyId(e.getEmergencyId())
@@ -247,23 +231,18 @@ public class EmergencyServiceImpl implements EmergencyService{
 
     @Transactional
     public void releaseAmbulanceForEmergency(Long emergencyId) {
-        // 1. Fetch the emergency
         Emergency emergency = emergencyRepository.findById(emergencyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Emergency", emergencyId));
+                .orElseThrow(() -> new ResourceNotFoundException(\"Emergency\", emergencyId));
 
-        // 2. Get the associated ambulance entity
         Ambulance ambulance = emergency.getAmbulance();
 
         if (ambulance == null) {
-            throw new BadRequestException("No ambulance was dispatched for this emergency.");
+            throw new BadRequestException(\"No ambulance was dispatched for this emergency.\");
         }
 
-        // 3. Update the ambulance status
         ambulance.setStatus(Ambulance.Status.AVAILABLE);
-
-        // 4. Save the updated ambulance
         ambulanceRepository.save(ambulance);
-        log.info("Ambulance {} released and marked AVAILABLE for Emergency {}", ambulance.getVehicleNumber(), emergencyId);
+        log.info(\"Ambulance {} released and marked AVAILABLE for Emergency {}\", ambulance.getVehicleNumber(), emergencyId);  
     }
 
     private boolean isDispatcher(Authentication auth) {
@@ -272,33 +251,34 @@ public class EmergencyServiceImpl implements EmergencyService{
         }
         return auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .anyMatch("ROLE_DISPATCHER"::equals);
+                .anyMatch(role -> role.equals(\"ROLE_DISPATCHER\") || role.equals(\"DISPATCHER\"));
     }
 
     private Long parseUserId(Authentication auth) {
         if (auth == null || auth.getName() == null) {
-            throw new BadRequestException("Authenticated user not found");
+            throw new BadRequestException(\"Authenticated user not found\");
         }
         try {
             return Long.parseLong(auth.getName());
         } catch (NumberFormatException ex) {
-            throw new BadRequestException("Invalid authenticated user id");
+            throw new BadRequestException(\"Invalid authenticated user id\");
         }
     }
 
     private Long resolveDispatcherFacilityId(Long dispatcherId) {
         try {
             var response = staffClient.getStaffById(dispatcherId);
-            StaffResponse staff = response != null ? response.getData() : null;
+            StaffResponse staff = (response != null && response.isSuccess()) ? response.getData() : null;
             if (staff == null || staff.getFacilityId() == null) {
-                throw new BadRequestException("Dispatcher is not assigned to any facility");
+                log.warn(\"Dispatcher {} facility resolution failed: staff={}, response={}\", dispatcherId, staff, response);
+                throw new BadRequestException(\"Dispatcher is not assigned to any facility\");
             }
             return staff.getFacilityId();
         } catch (BadRequestException ex) {
             throw ex;
         } catch (Exception ex) {
-            log.warn("Failed to resolve facility for dispatcher {}: {}", dispatcherId, ex.getMessage());
-            throw new BadRequestException("Unable to determine dispatcher facility");
+            log.error(\"Error resolving facility for dispatcher {}: {}\", dispatcherId, ex.getMessage());
+            throw new BadRequestException(\"Unable to determine dispatcher facility due to internal error\");
         }
     }
 

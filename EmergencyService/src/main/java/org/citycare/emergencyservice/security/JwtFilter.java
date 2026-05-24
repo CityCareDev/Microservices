@@ -18,48 +18,47 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j // Add this if you want to see logs
+@Slf4j
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
 
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)       
             throws ServletException, IOException {
 
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader(\"Authorization\");
 
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith(\"Bearer \")) {
             String token = authHeader.substring(7);
             try {
                 Claims claims = jwtProvider.getClaims(token);
 
-                // check if token is valid
                 if (!jwtProvider.isTokenExpired(claims)) {
 
-                    String role = claims.get("role", String.class);
-
-                    // SAFE EXTRACTION: userId Number ayina, String ayina handle chestundi
-                    Object userIdObj = claims.get("userId");
+                    String role = claims.get(\"role\", String.class);
+                    Object userIdObj = claims.get(\"userId\");
 
                     if (role != null && userIdObj != null) {
-                        String userId = String.valueOf(userIdObj); // Convert to String safely
-                        String authority = "ROLE_" + role.toUpperCase().trim();
+                        String userId = String.valueOf(userIdObj);
+                        
+                        // Use consistent role naming
+                        String roleName = role.toUpperCase().trim();
+                        if (!roleName.startsWith(\"ROLE_\")) {
+                            roleName = \"ROLE_\" + roleName;
+                        }
 
                         UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                                userId, // Principal
+                                userId,
                                 null,
-                                List.of(new SimpleGrantedAuthority(authority))
+                                List.of(new SimpleGrantedAuthority(roleName))
                         );
 
                         SecurityContextHolder.getContext().setAuthentication(auth);
-                        log.info("Authenticated User ID: {} with role: {}", userId, authority);
-                    } else {
-                        log.warn("Missing claims - Role: {}, UserID: {}", role, userIdObj);
+                        log.info(\"Authenticated User ID: {} with role: {}\", userId, roleName);
                     }
                 }
             } catch (Exception e) {
-                log.error("JWT Authentication failed: {}", e.getMessage());
-                // Optional: SecurityContext clear cheyadam better practice
+                log.error(\"JWT Authentication failed: {}\", e.getMessage());
                 SecurityContextHolder.clearContext();
             }
         }
